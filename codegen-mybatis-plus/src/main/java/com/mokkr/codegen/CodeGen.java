@@ -4,19 +4,16 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.generator.AutoGenerator;
 import com.baomidou.mybatisplus.generator.InjectionConfig;
 import com.baomidou.mybatisplus.generator.config.*;
-import com.baomidou.mybatisplus.generator.config.po.TableField;
-import com.baomidou.mybatisplus.generator.config.po.TableInfo;
 import com.baomidou.mybatisplus.generator.config.rules.NamingStrategy;
 import com.baomidou.mybatisplus.generator.engine.FreemarkerTemplateEngine;
 import lombok.Setter;
+import lombok.experimental.Accessors;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.IntStream;
 
 @Setter
+@Accessors(chain = true)
 public class CodeGen {
     private String dataSourceConfigJdbcUrl;
     private String dataSourceConfigUsername;
@@ -24,7 +21,6 @@ public class CodeGen {
     private String[] strategyConfigIncludes;
     private String packageConfigParent;
     private String packageConfigModuleName;
-    private String globalConfigOutputDir = "/codegen/" + UUID.randomUUID().toString();
     private String globalConfigAuthor;
     private IdType globalConfigIdType;
 
@@ -88,15 +84,13 @@ public class CodeGen {
         TemplateConfig templateConfig = new TemplateConfig();
         templateConfig.setService(null);
         templateConfig.setServiceImpl(null);
-        // 通过InjectionConfig自定义输出
-        templateConfig.setXml(null);
         templateConfig.setController(null);
         return templateConfig;
     }
 
     private GlobalConfig createGlobalConfig() {
         GlobalConfig globalConfig = new GlobalConfig();
-        globalConfig.setOutputDir(globalConfigOutputDir);
+        globalConfig.setOutputDir("/codegen/" + UUID.randomUUID().toString());
         globalConfig.setFileOverride(true);
         globalConfig.setOpen(true);
         globalConfig.setAuthor(globalConfigAuthor);
@@ -115,39 +109,9 @@ public class CodeGen {
 
             @Override
             public Map<String, Object> prepareObjectMap(Map<String, Object> objectMap) {
-                TableInfo tableInfo = (TableInfo) objectMap.get("table");
-                String tableAlias = "t" + tableInfo.getEntityName();
-                String aliasFieldNames = getAliasFieldNames(tableAlias, tableInfo.getFields());
-                objectMap.put("tableAlias", tableAlias);
-                objectMap.put("aliasFieldNames", aliasFieldNames);
                 return objectMap;
             }
-
-            private String getAliasFieldNames(String tableAlias, List<TableField> tableFields) {
-                StringBuilder sb = new StringBuilder();
-                IntStream.range(0, tableFields.size()).forEach(i -> {
-                    TableField fd = tableFields.get(i);
-                    if (i == tableFields.size() - 1) {
-                        sb.append(tableAlias + "." + fd.getName());
-                    } else {
-                        sb.append(tableAlias + "." + fd.getName()).append(", ");
-                    }
-                });
-                return sb.toString();
-            }
         };
-        // 自定义输出配置
-        List<FileOutConfig> fileOutConfigs = new ArrayList<>();
-        // freemarker模板
-        String templatePath = "/templates/mapper-ex.xml.ftl";
-        // 自定义配置会被优先输出
-        fileOutConfigs.add(new FileOutConfig(templatePath) {
-            @Override
-            public String outputFile(TableInfo tableInfo) {
-                return String.format(globalConfigOutputDir + "/mapper/xml/%sMapper.xml", tableInfo.getEntityName());
-            }
-        });
-        injectionConfig.setFileOutConfigList(fileOutConfigs);
         return injectionConfig;
     }
 }
